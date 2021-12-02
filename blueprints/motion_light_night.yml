@@ -2,7 +2,7 @@ blueprint:
   name: Motion light with low brightness at night
   description: Turn on a light when motion is detected.
   domain: automation
-  source_url: https://github.com/home-assistant/core/blob/dev/homeassistant/components/automation/blueprints/motion_light.yaml
+  source_url: https://github.com/maschmann/homeassistant-automations/blob/main/blueprints/motion_light_night.yml
   input:
     motion_entity:
       name: Motion Sensor

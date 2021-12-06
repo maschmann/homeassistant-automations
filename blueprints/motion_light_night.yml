@@ -25,14 +25,14 @@ blueprint:
       selector:
         number:
           min: 10
-          max: 100
+          max: 255
           step: 10
           mode: slider      
 
     no_motion_wait:
       name: Wait time
       description: Time to leave the light on after last motion is detected.
-      default: 120
+      default: 90
       selector:
         number:
           min: 0
@@ -45,9 +45,15 @@ blueprint:
 mode: restart
 max_exceeded: silent
 
+variables:
+  motion_entity: !input 'motion_entity'
+  light_target: !input 'light_target'
+  light_brightness: !input 'light_brightness'
+  no_motion_wait: !input 'no_motion_wait'
+
 trigger:
   platform: state
-  entity_id: !input motion_entity
+  entity_id: !input 'motion_entity'
   from: "off"
   to: "on"
 
@@ -65,18 +71,18 @@ action:
     service: light.turn_on
     data:
       brightness: "{{ light_brightness }}"
-    target: !input light_target
+    target: !input 'light_target'
 
   - alias: "Wait until there is no motion from device"
     wait_for_trigger:
       platform: state
-      entity_id: !input motion_entity
+      entity_id: !input 'motion_entity'
       from: "on"
       to: "off"
 
   - alias: "Wait the number of seconds that has been set"
-    delay: !input no_motion_wait
+    delay: !input 'no_motion_wait'
 
   - alias: "Turn off light"
     service: light.turn_off
-    target: !input light_target
+    target: !input 'light_target'

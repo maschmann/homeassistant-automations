@@ -21,7 +21,7 @@ blueprint:
     no_motion_wait:
       name: Wait time
       description: Time to leave the light on after last motion is detected.
-      default: 120
+      default: 90
       selector:
         number:
           min: 0
@@ -33,9 +33,14 @@ blueprint:
 mode: restart
 max_exceeded: silent
 
+variables:
+  motion_entity: !input 'motion_entity'
+  switch_target: !input 'switch_target'
+  no_motion_wait: !input 'no_motion_wait'
+
 trigger:
   platform: state
-  entity_id: !input motion_entity
+  entity_id: !input 'motion_entity'
   from: "off"
   to: "on"
 
@@ -56,7 +61,7 @@ action:
   - alias: "Wait until there is no motion from device"
     wait_for_trigger:
       platform: state
-      entity_id: !input motion_entity
+      entity_id: !input 'motion_entity'
       from: "on"
       to: "off"
 
@@ -65,4 +70,4 @@ action:
 
   - alias: "Turn off switch"
     service: switch.turn_off
-    target: !input switch_target
+    target: !input 'switch_target'

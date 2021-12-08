@@ -1,0 +1,129 @@
+blueprint:
+  name: Motion activated device at night
+  description: Turn on a device when motion is detected, turn off after delay. Works only from dusk till dawn + offset
+  domain: automation
+  source_url: https://github.com/maschmann/homeassistant-automations/blob/main/blueprints/motion_activated_device.yml
+  input:
+
+    motion_entity:
+      name: Motion Sensor
+      selector:
+        entity:
+          domain: binary_sensor
+          device_class: motion
+    
+    light_target:
+      name: Light
+      default: {}
+      selector:
+        target:
+          entity:
+            domain: light
+
+    switch_target:
+      name: Switch
+      default: {}
+      selector:
+        target: 
+          entity:
+            domain: switch
+
+    light_brightness:
+      name: Night brightness
+      description: The brightness to use when turning the light on
+      default: 20
+      selector:
+        number:
+          min: 10
+          max: 255
+          step: 10
+          mode: slider      
+
+    no_motion_wait:
+      name: Wait time
+      description: Time to leave the light on after last motion is detected.
+      default: 90
+      selector:
+        number:
+          min: 0
+          max: 300
+          step: 5
+          unit_of_measurement: seconds
+
+# If motion is detected within the delay,
+# we restart the script.
+# this resolves the timer reset issue
+mode: restart
+max_exceeded: silent
+
+variables:
+  motion_entity: !input 'motion_entity'
+  light_target: !input 'light_target'
+  switch_target: !input 'switch_target'
+  light_brightness: !input 'light_brightness'
+  no_motion_wait: !input 'no_motion_wait'
+
+trigger:
+  platform: state
+  entity_id: !input 'motion_entity'
+  from: 'off'
+  to: 'on'
+
+action:
+  - condition: or
+    conditions:
+      - condition: sun
+        after: sunset
+        after_offset: '-1:00:00'
+      - condition: sun
+        before: sunrise
+        before_offset: '+1:00:00'
+
+  - choose:
+    - conditions: 
+        condition: template
+        value_template: '{{ light_target | length > 0 }}'
+      sequence:
+        - alias: 'Turn on light'
+          service: light.turn_on
+          data:
+            brightness: '{{ light_brightness }}'
+          target: !input 'light_target'
+
+  - choose:
+    - conditions: 
+        condition: template
+        value_template: '{{ switch_target | length > 0 }}'
+      sequence:
+        - alias: 'Turn on Switch'
+          service: switch.turn_on
+          target: !input 'switch_target'
+
+
+  - alias: 'Wait until there is no motion from device'
+    wait_for_trigger:
+      platform: state
+      entity_id: !input 'motion_entity'
+      from: 'on'
+      to: 'off'
+
+  - alias: 'Wait the number of seconds that has been set'
+    delay: !input 'no_motion_wait'
+
+  - choose:
+    - conditions: 
+        condition: template
+        value_template: '{{ light_target | length > 0 }}'
+      sequence:
+        - alias: 'Turn off Light'
+          service: light.turn_off
+          target: !input 'light_target'
+
+  - choose:
+    - conditions: 
+        condition: template
+        value_template: '{{ switch_target | length > 0 }}'
+      sequence:
+        - alias: 'Turn off Switch'
+          service: switch.turn_off
+          target: !input 'switch_target'

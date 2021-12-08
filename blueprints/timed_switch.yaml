@@ -1,0 +1,56 @@
+blueprint:
+  name: Switch Timer
+  description: Start a Timer on turning on a device.
+  domain: automation
+  source_url: https://github.com/maschmann/homeassistant-automations/blob/main/blueprints/timed_switch.yml
+  input:
+
+    switch_trigger:
+      name: Trigger device
+      description: Device that will trigger the timer
+      selector:
+        entity:
+          domain: switch
+
+    wait_for_it:
+      name: Wait time
+      description: Time to wait until device is turned off.
+      default: 10
+      selector:
+        number:
+          min: 1
+          max: 60
+          unit_of_measurement: minutes
+
+variables:
+  switch_trigger: !input 'switch_trigger'
+  wait_for_it: !input 'wait_for_it'
+
+mode: restart
+max_exceeded: silent
+
+trigger:
+  platform: state
+  entity_id: !input 'switch_trigger'
+  from: 'off'
+  to: 'on'
+
+action:
+  - alias: "Debug notify"
+    service: notify.slack_debug
+    data:
+      message: "Device {{ trigger.to_state.attributes.friendly_name  }} turned on for {{ wait_for_it }} minutes"
+      title: "timed switch"
+
+  - alias: 'Wait the number of minutes that has been set'
+    delay: "{{ wait_for_it | multiply(60) | int }}"
+
+  - alias: 'Turn off switch'
+    service: switch.turn_off
+    entity_id: !input 'switch_trigger'
+
+  - alias: "Debug notify"
+    service: notify.slack_debug
+    data:
+      message: "Device {{ trigger.to_state.attributes.friendly_name  }} turned off after {{ wait_for_it }} minutes"
+      title: "timed switch"

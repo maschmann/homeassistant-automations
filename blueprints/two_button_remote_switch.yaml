@@ -1,0 +1,110 @@
+blueprint:
+  name: deCONZ - SIMPLE IKEA Tradfri on/off switch
+  description: |
+    "Control lights or devices (simple on/off)"
+  domain: automation
+
+  input:
+    remote:
+      name: Remote
+      description: The remote that will control the lights
+      selector:
+        device:
+          integration: deconz
+          manufacturer: 'IKEA of Sweden'
+          model: 'TRADFRI on/off switch'
+
+    light:
+      name: Light
+      description: The lights that will be controlled
+      default: {}
+      selector:
+        target:
+          entity:
+            domain: light
+    
+    switch:
+      name: Switch
+      description: Switching device(s) to be controlled
+      default: {}
+      selector:
+        target:
+          entity:
+            domain: switch
+
+variables:
+  light_target: !input 'light'
+  switch_target: !input 'switch'
+
+mode: restart
+
+trigger:
+- platform: event
+  event_type: deconz_event
+  event_data:
+    device_id: !input 'remote'
+
+action:
+- variables:
+    event: "{{ trigger.event.data.event }}"
+
+- choose:
+  - conditions:
+    - "{{ event == 1002 }}"
+    - '{{ light_target | length > 0 }}'
+    sequence:
+    - service: light.turn_on
+      target: !input 'light'
+      data:
+        transition: 1
+
+  - conditions:
+    - "{{ event == 1002 }}"
+    - '{{ switch_target | length > 0 }}'
+    sequence:
+    - service: switch.turn_on
+      target: !input 'switch'
+
+  - conditions:
+    - "{{ event == 2002 }}"
+    - '{{ light_target | length > 0 }}'
+    sequence:
+    - service: light.turn_off
+      target: !input 'light'
+      data:
+        transition: 1
+
+  - conditions:
+    - "{{ event == 2002 }}"
+    - '{{ switch_target | length > 0 }}'
+    sequence:
+    - service: switch.turn_off
+      target: !input 'switch'
+
+  - conditions:
+    - "{{ event == 1003 }}"
+    - '{{ light_target | length > 0 }}'
+    sequence:
+    - service: light.turn_on
+      target: !input 'light'
+
+  - conditions:
+    - "{{ event == 1003 }}"
+    - '{{ switch_target | length > 0 }}'
+    sequence:
+    - service: switch.turn_on
+      target: !input 'switch'
+
+  - conditions:
+    - "{{ event == 2003 }}"
+    - '{{ light_target | length > 0 }}'
+    sequence:
+    - service: light.turn_on
+      target: !input 'light'
+
+  - conditions:
+    - "{{ event == 2003 }}"
+    - '{{ switch_target | length > 0 }}'
+    sequence:
+    - service: switch.turn_on
+      target: !input 'switch'

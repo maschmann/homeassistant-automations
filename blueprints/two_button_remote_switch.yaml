@@ -5,6 +5,7 @@ blueprint:
   domain: automation
 
   input:
+  
     remote:
       name: Remote
       description: The remote that will control the lights

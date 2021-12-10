@@ -35,7 +35,7 @@ blueprint:
       selector:
         number:
           min: 10
-          max: 255
+          max: 100
           step: 10
           mode: slider      
 
@@ -80,6 +80,7 @@ action:
         before_offset: '+1:00:00'
 
   - choose:
+
     - conditions: 
         condition: template
         value_template: '{{ light_target | length > 0 }}'
@@ -90,7 +91,6 @@ action:
             brightness: '{{ light_brightness }}'
           target: !input 'light_target'
 
-  - choose:
     - conditions: 
         condition: template
         value_template: '{{ switch_target | length > 0 }}'
@@ -111,6 +111,7 @@ action:
     delay: !input 'no_motion_wait'
 
   - choose:
+
     - conditions: 
         condition: template
         value_template: '{{ light_target | length > 0 }}'
@@ -119,7 +120,6 @@ action:
           service: light.turn_off
           target: !input 'light_target'
 
-  - choose:
     - conditions: 
         condition: template
         value_template: '{{ switch_target | length > 0 }}'

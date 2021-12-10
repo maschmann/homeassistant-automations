@@ -1,0 +1,66 @@
+blueprint:
+  name: Low temperature alert for all temperature sensors
+  description: Regularly test all sensors with 'temperature' device-class for crossing
+    a certain temperature threshold and if so execute an action.
+  domain: automation
+  input:
+
+    threshold:
+      name: Temperature threshold
+      description: Temperature 
+      default: 10
+      selector:
+        number:
+          min: 0.0
+          max: 30.0
+          unit_of_measurement: '°C'
+          mode: slider
+          step: 5.0
+
+    exclude:
+      name: Excluded Sensors
+      description: Battery sensors (e.g. smartphone) to exclude from detection. Only entities are supported, devices must be expanded!
+      default: {entity_id: []}
+      selector:
+        target:
+          entity:
+            device_class: temperature
+
+    actions:
+      name: Actions
+      description: Notifications or similar to be run. {{ sensors }} is replaced with
+        the names of sensors being below temperature threshold.
+      selector:
+        action: {}
+
+variables:
+  threshold: !input 'threshold'
+  exclude: !input 'exclude'
+  sensors: >-
+    {% set result = namespace(sensors=[]) %}
+    {% for state in states.sensor | selectattr('attributes.device_class', '==', 'temperature') %}
+      {% if 0 <= state.state | int(-1) < threshold | int and not state.entity_id in exclude.entity_id %}
+        {% set result.sensors = result.sensors + [state.name ~ ' (' ~ state.state ~ ' °C)'] %}
+      {% endif %}
+    {% endfor %}
+    {% for state in states.binary_sensor | selectattr('attributes.device_class', '==', 'temperature') | selectattr('state', '==', 'on') %}
+      {% if not state.entity_id in exclude.entity_id %}
+        {% set result.sensors = result.sensors + [state.name] %}
+      {% endif %}
+    {% endfor %}
+    {{ result.sensors|join(', ') }}
+
+trigger:
+    - platform: time_pattern
+      # You can also match on interval. This will match every 5 minutes
+      minutes: "/15"
+
+condition:
+  - condition: template
+    value_template: '{{ sensors != '''' }}'
+
+action:
+  - choose: []
+    default: !input 'actions'
+
+mode: single

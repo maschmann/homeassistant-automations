@@ -28,7 +28,7 @@ action:
     data:
       message: > 
         {{ trigger.to_state.attributes.friendly_name }} was
-        {% if trigger.to_state.state == "on" %}opened{% elif trigger.to_state.state == "off" %}closed{% endif %}
+        {% if trigger.to_state.state == "off" %}closed{% elif trigger.to_state.state == "on" %}opened{% endif %}
       title: "Door alert"
 
   - alias: "Notify Push"
@@ -36,5 +36,5 @@ action:
     data:
       message: > 
         {{ trigger.to_state.attributes.friendly_name }} was
-        {% if trigger.to_state.state == "on" %}opened{% elif trigger.to_state.state == "off" %}closed{% endif %}
+        {% if trigger.to_state.state == "off" %}closed{% elif trigger.to_state.state == "on" %}opened{% endif %}
       title: "Door alert"

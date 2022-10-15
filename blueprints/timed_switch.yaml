@@ -2,7 +2,6 @@ blueprint:
   name: Switch Timer
   description: Start a Timer on turning on a device.
   domain: automation
-  source_url: https://github.com/maschmann/homeassistant-automations/blob/main/blueprints/timed_switch.yml
   input:
 
     switch_trigger:

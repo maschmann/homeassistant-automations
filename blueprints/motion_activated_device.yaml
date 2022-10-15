@@ -2,7 +2,6 @@ blueprint:
   name: Motion activated device at night
   description: Turn on a device when motion is detected, turn off after delay. Works only from dusk till dawn + offset
   domain: automation
-  source_url: https://github.com/maschmann/homeassistant-automations/blob/main/blueprints/motion_activated_device.yml
   input:
 
     motion_entity:

@@ -1,0 +1,118 @@
+blueprint:
+  name: ZHA - SIMPLE IKEA Tradfri on/off switch
+  description: |
+    "Control lights or devices (simple on/off)"
+  domain: automation
+
+  input:
+  
+    remote:
+      name: Remote
+      description: The remote that will control the lights
+      selector:
+        device:
+          integration: zha
+          manufacturer: 'IKEA of Sweden'
+          model: 'TRADFRI on/off switch'
+
+    light:
+      name: Light
+      description: The lights that will be controlled
+      default: {}
+      selector:
+        target:
+          entity:
+            domain: light
+    
+    switch:
+      name: Switch
+      description: Switching device(s) to be controlled
+      default: {}
+      selector:
+        target:
+          entity:
+            domain: switch
+
+variables:
+  light_target: !input 'light'
+  switch_target: !input 'switch'
+
+mode: restart
+max_exceeded: silent
+
+trigger:
+- platform: event
+  event_type: zha_event
+  event_data:
+    device_id: !input 'remote'
+
+action:
+- variables:
+    command: "{{ trigger.event.data.command }}"
+    cluster_id: "{{ trigger.event.data.cluster_id }}"
+    endpoint_id: "{{ trigger.event.data.endpoint_id }}"
+    args: "{{ trigger.event.data.args }}"
+
+- choose:
+  - conditions:
+    - "{{ command == 'on' }}"
+    - '{{ light_target | length > 0 }}'
+    sequence:
+    - service: light.turn_on
+      target: !input 'light'
+      data:
+        transition: 1
+
+  - conditions:
+    - "{{ command == 'on' }}"
+    - '{{ switch_target | length > 0 }}'
+    sequence:
+    - service: switch.turn_on
+      target: !input 'switch'
+
+  - conditions:
+    - "{{ command == 'off' }}"
+    - '{{ light_target | length > 0 }}'
+    sequence:
+    - service: light.turn_off
+      target: !input 'light'
+      data:
+        transition: 1
+
+  - conditions:
+    - "{{ command == 'off' }}"
+    - '{{ switch_target | length > 0 }}'
+    sequence:
+    - service: switch.turn_off
+      target: !input 'switch'
+
+  - conditions:
+    - "{{ command == 'move_with_of_off' }}"
+    - '{{ light_target | length > 0 }}'
+    sequence:
+      repeat:
+        while:
+        - condition: template
+          value_template: "{{ repeat.index < 10 }}"
+        sequence:
+        - service: light.turn_on
+          target: !input 'light'
+          data:
+            transition: 1
+            brightness_step_pct: 10
+        - delay: 1
+  - conditions:
+    - "{{ command == 'move' }}"
+    - '{{ light_target | length > 0 }}'
+    sequence:
+      repeat:
+        while:
+        - condition: template
+          value_template: "{{ repeat.index < 10 }}"
+        sequence:
+        - service: light.turn_on
+          target: !input 'light'
+          data:
+            transition: 1
+            brightness_step_pct: -10
+        - delay: 1

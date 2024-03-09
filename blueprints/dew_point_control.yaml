@@ -1,0 +1,68 @@
+blueprint:
+  name: Dew point fan control
+  description: Poll dew point sensors for difference of at least $defined difference and turn on/off a fan/vent
+  domain: automation
+  input:
+    inside_sensor_entity:
+      name: Inside dew point sensor
+      selector:
+        entity:
+          domain: sensor
+    outside_sensor_entity:
+      name: Outside dew point sensor
+      selector:
+        entity:
+          domain: sensor
+    switch_target:
+      name: fan/vent
+      selector:
+        entity:
+          domain: switch
+    dp_diff:
+      name: Min dew point difference degrees
+      description: Min dew point difference inside/outside degrees
+      default: 2.0
+      selector:
+        number:
+          min: 1.0
+          max: 15.0
+          mode: slider
+          step: 1.0
+    interval:
+      name: polling interval
+      description: Interval in which to check for changes in dew point
+      default: 15
+      selector:
+        number:
+          min: 1
+          max: 60
+          unit_of_measurement: minutes
+
+variables:
+  interval: !input interval
+  diff: !input dp_diff
+  inside: !input inside_sensor_entity
+  outside: !input outside_sensor_entity
+
+trigger:
+  - platform: time_pattern
+    # You can also match on interval.
+    minutes: !input interval
+
+action:
+  - choose:
+    # IF fan not ON and dew point difference in range
+    - conditions:
+      - condition: state
+        entity_id: !input switch_target
+        state: "off"
+      - condition: template
+        value_template: "{{ states(outside) | float <= ( states(inside) | float + diff ) }}"
+      sequence:
+        - service: switch.turn_on
+          entity_id: !input switch_target
+    default:
+      - service: switch.turn_off
+        entity_id: !input switch_target
+
+mode: single
